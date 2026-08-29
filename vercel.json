@@ -1,13 +1,12 @@
 {
-  "version": 2,
-  "rewrites": [
+  "services": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
+      "rootDirectory": ".",
+      "routePrefix": "/"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "rootDirectory": "backend",
+      "routePrefix": "/api"
     }
   ]
 }
