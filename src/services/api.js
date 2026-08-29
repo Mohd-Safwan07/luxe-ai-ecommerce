@@ -1,17 +1,8 @@
 const getApiBaseUrl = () => {
-  // If VITE_API_URL is explicitly configured, use it (removing any trailing slash)
+  // Use VITE_API_URL if defined (from root .env or environment variables), stripping trailing slashes or duplicate /api
   if (import.meta.env.VITE_API_URL) {
     const envUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
     return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
-  }
-  // In production / deployed environment (non-localhost), default to relative path "" so requests target /api/... on same domain
-  if (
-    import.meta.env.MODE === 'production' ||
-    (typeof window !== 'undefined' &&
-      window.location.hostname !== 'localhost' &&
-      window.location.hostname !== '127.0.0.1')
-  ) {
-    return '';
   }
   // Local development fallback
   return 'http://localhost:5000';
