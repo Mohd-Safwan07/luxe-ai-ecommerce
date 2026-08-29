@@ -1,21 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { DUMMY_PRODUCTS } from '../data/products';
-import { apiFetch } from '../utils/api';
+import { apiFetch, fetchProductsFromAPI } from '../services/api';
 
 const ShopContext = createContext();
 
 export const ShopProvider = ({ children }) => {
-  const [products, setProducts] = useState(DUMMY_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productsError, setProductsError] = useState(null);
 
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
 
-  const [cart, setCart] = useState([
-    { product: DUMMY_PRODUCTS[0], quantity: 1, selectedColor: (DUMMY_PRODUCTS[0].colors && DUMMY_PRODUCTS[0].colors[0]) || '' },
-    { product: DUMMY_PRODUCTS[2], quantity: 1, selectedColor: (DUMMY_PRODUCTS[2].colors && DUMMY_PRODUCTS[2].colors[0]) || '' }
-  ]);
-
+  const [cart, setCart] = useState([]);
   const [wishlist, setWishlist] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -49,35 +45,35 @@ export const ShopProvider = ({ children }) => {
     const fetchProducts = async () => {
       try {
         setLoadingProducts(true);
-        const data = await apiFetch('/products');
-        if (Array.isArray(data) && data.length > 0) {
+        setProductsError(null);
+        const data = await fetchProductsFromAPI();
+        if (Array.isArray(data)) {
           // Normalize MongoDB product _id to id for seamless UI compatibility
           const normalized = data.map((p) => ({
             ...p,
             id: p._id || p.id,
-            price: p.price || p.originalPrice || 99,
-            originalPrice: p.originalPrice || p.price || 99,
-            discountedPrice: p.discountedPrice || p.price || 99,
-            colors: p.colors && p.colors.length > 0 ? p.colors : ['#000000', '#ffffff']
+            name: p.name || '',
+            description: p.description || '',
+            price: p.discountedPrice !== undefined ? p.discountedPrice : (p.price || p.originalPrice || 0),
+            originalPrice: p.originalPrice || p.price || 0,
+            discountedPrice: p.discountedPrice !== undefined ? p.discountedPrice : (p.price || p.originalPrice || 0),
+            discountPercentage: p.discountPercentage !== undefined ? p.discountPercentage : 0,
+            rating: p.rating || 4.5,
+            reviewCount: p.reviewCount || 0,
+            image: p.image || '',
+            secondaryImage: p.secondaryImage || p.image || '',
+            category: p.category || 'General',
+            badge: p.badge || '',
+            colors: p.colors && p.colors.length > 0 ? p.colors : ['#000000', '#ffffff'],
+            inStock: p.inStock !== undefined ? p.inStock : (p.stock > 0)
           }));
           setProducts(normalized);
-
-          // Update initial cart items to point to real MongoDB products
-          setCart((prevCart) =>
-            prevCart.map((cartItem) => {
-              const matchedProd = normalized.find(
-                (p) =>
-                  p.name.toLowerCase() === cartItem.product.name.toLowerCase() ||
-                  (cartItem.product.id && (p.id === cartItem.product.id || p._id === cartItem.product.id)) ||
-                  p.name.toLowerCase().includes(cartItem.product.name.slice(0, 12).toLowerCase()) ||
-                  cartItem.product.name.toLowerCase().includes(p.name.slice(0, 12).toLowerCase())
-              );
-              return matchedProd ? { ...cartItem, product: matchedProd } : cartItem;
-            })
-          );
+        } else {
+          setProducts([]);
         }
       } catch (err) {
-        console.log('Using static dummy products fallback');
+        console.error('Failed to fetch products from backend API:', err.message);
+        setProductsError('Unable to connect to product server. Please verify the backend is running.');
       } finally {
         setLoadingProducts(false);
       }
@@ -347,6 +343,7 @@ export const ShopProvider = ({ children }) => {
       value={{
         products,
         loadingProducts,
+        productsError,
         filteredProducts,
         cart,
         wishlist,
