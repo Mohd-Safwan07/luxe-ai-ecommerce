@@ -1,12 +1,12 @@
 {
-  "services": [
-    {
+  "services": {
+    "frontend": {
       "rootDirectory": ".",
       "routePrefix": "/"
     },
-    {
+    "backend": {
       "rootDirectory": "backend",
       "routePrefix": "/api"
     }
-  ]
+  }
 }
