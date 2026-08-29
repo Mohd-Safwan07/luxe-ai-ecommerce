@@ -1,11 +1,26 @@
 const getApiBaseUrl = () => {
-  // Use VITE_API_URL if defined (from root .env or environment variables), stripping trailing slashes or duplicate /api
-  if (import.meta.env.VITE_API_URL) {
-    const envUrl = import.meta.env.VITE_API_URL.replace(/\/$/, '');
-    return envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
+  let rawUrl = import.meta.env.VITE_API_URL;
+
+  // If VITE_API_URL is not set (e.g. during Vercel build where .env is gitignored), default to live deployed backend in production
+  if (!rawUrl) {
+    if (
+      import.meta.env.MODE === 'production' ||
+      (typeof window !== 'undefined' &&
+        window.location.hostname !== 'localhost' &&
+        window.location.hostname !== '127.0.0.1')
+    ) {
+      rawUrl = 'https://backend-three-pi-83.vercel.app';
+    } else {
+      rawUrl = 'http://localhost:5000';
+    }
   }
-  // Local development fallback
-  return 'http://localhost:5000';
+
+  // Normalize URL: strip trailing slashes and any duplicate /api suffix
+  let cleanUrl = rawUrl.replace(/\/+$/, '');
+  if (cleanUrl.endsWith('/api')) {
+    cleanUrl = cleanUrl.slice(0, -4);
+  }
+  return cleanUrl;
 };
 
 const getAuthHeader = () => {
