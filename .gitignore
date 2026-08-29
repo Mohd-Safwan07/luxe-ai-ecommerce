@@ -19,7 +19,7 @@ scratch
 
 # Database data directories & lock files
 backend/data
-data/
+!src/data/
 *.wt
 *.lock
 
