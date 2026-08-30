@@ -6,12 +6,14 @@ import {
   Package, 
   Plus, 
   Search, 
+  Filter,
   Edit, 
   Trash2, 
   Star, 
   CheckCircle2, 
   XCircle, 
   AlertCircle,
+  AlertTriangle,
   RefreshCw,
   X,
   Upload,
@@ -22,6 +24,7 @@ export const AdminProducts = () => {
   const { addToast } = useShop();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -48,9 +51,12 @@ export const AdminProducts = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError('');
       const data = await apiFetch('/products');
-      setProducts(Array.isArray(data) ? data : []);
+      setProducts(Array.isArray(data) ? data : (data?.products || data?.data || []));
     } catch (err) {
+      console.error('Failed to load admin products inventory:', err);
+      setError(err.message || 'Failed to connect to product services.');
       addToast(err.message || 'Failed to load products', 'error');
     } finally {
       setLoading(false);
@@ -155,9 +161,11 @@ export const AdminProducts = () => {
   };
 
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-                          p.category.toLowerCase().includes(search.toLowerCase());
-    const matchesCat = selectedCategory === 'all' || p.category.toLowerCase() === selectedCategory.toLowerCase();
+    const name = p.name || '';
+    const category = p.category || '';
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase()) ||
+                          category.toLowerCase().includes(search.toLowerCase());
+    const matchesCat = selectedCategory === 'all' || category.toLowerCase() === selectedCategory.toLowerCase();
     return matchesSearch && matchesCat;
   });
 
@@ -209,6 +217,23 @@ export const AdminProducts = () => {
           </select>
         </div>
       </div>
+
+      {/* Error Alert Card */}
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-rose-800 space-y-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-rose-600" />
+            <h3 className="font-extrabold text-lg">Unable to Load Product Catalog</h3>
+          </div>
+          <p className="text-xs text-rose-600">{error}</p>
+          <button
+            onClick={fetchProducts}
+            className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-rose-700 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry Loading
+          </button>
+        </div>
+      )}
 
       {/* Products Data Table */}
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
